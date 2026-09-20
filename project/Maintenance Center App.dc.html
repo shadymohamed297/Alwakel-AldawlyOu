@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#e9e5dc;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;direction:rtl}
+  a{color:#b4400f}a:hover{color:#8c3009}
+  @keyframes liveDot{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:20px;padding:32px 18px 60px">
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;max-width:620px">
+    <div style="font:500 10.5px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#8b8578">ANDROID · RTL · INTERACTIVE PROTOTYPE</div>
+    <h1 style="margin:0;font:700 25px/1.35 'IBM Plex Sans Arabic',sans-serif;color:#15140f">نظام مركز صيانة متكامل</h1>
+    <p style="margin:0;font:400 13px/1.65 'IBM Plex Sans Arabic',sans-serif;color:#6e685d;text-wrap:pretty">صيانة الأجهزة المنزلية — أداة ميدانية للفني، طابور تشغيل لموظف الاستقبال، ولوحة أداء للمدير. اضغط على أي عنصر: الشاشات حقيقية والحالة تتغير.</p>
+  </div>
+
+  <div style="display:flex;gap:6px;padding:5px;background:#fff;border:1px solid rgba(21,20,15,.14);border-radius:6px">
+    <div onClick="{{ goTech }}" style="{{ tabTechStyle }}">الفني الميداني</div>
+    <div onClick="{{ goDesk }}" style="{{ tabDeskStyle }}">الاستقبال</div>
+    <div onClick="{{ goMgr }}" style="{{ tabMgrStyle }}">المدير</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:600px">
+    <sc-for list="{{ jumps }}" as="j" hint-placeholder-count="6">
+      <div onClick="{{ j.go }}" style="{{ j.style }}">{{ j.label }}</div>
+    </sc-for>
+  </div>
+
+  <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="412" height="892" hint-size="412px,892px">
+
+    <div style="direction:rtl;background:#f4f1ea;min-height:100%;box-sizing:border-box">
+
+      <!-- ============ T1 · يوم الفني ============ -->
+      <sc-if value="{{ isT1 }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="background:#15140f;padding:14px 16px 16px;color:#fff">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <div style="font:400 11.5px/1 'IBM Plex Sans Arabic',sans-serif;color:rgba(255,255,255,.6)">الأحد ١٣ سبتمبر</div>
+                <div style="font:600 17px/1.3 'IBM Plex Sans Arabic',sans-serif">فهد العتيبي · تبريد وتكييف</div>
+              </div>
+              <div style="width:38px;height:38px;border-radius:4px;background:#c2410c;display:flex;align-items:center;justify-content:center;font:600 14px 'IBM Plex Sans Arabic',sans-serif">ف</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <div style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:9px 10px">
+                <div style="font:500 19px/1 'IBM Plex Mono',monospace;color:#fff">05</div>
+                <div style="font:400 10.5px/1.4 'IBM Plex Sans Arabic',sans-serif;color:rgba(255,255,255,.55);margin-top:4px">أمر عمل اليوم</div>
+              </div>
+              <div style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:9px 10px">
+                <div style="font:500 19px/1 'IBM Plex Mono',monospace;color:#fff">02</div>
+                <div style="font:400 10.5px/1.4 'IBM Plex Sans Arabic',sans-serif;color:rgba(255,255,255,.55);margin-top:4px">مكتمل</div>
+              </div>
+              <div style="flex:1;background:rgba(194,65,12,.18);border:1px solid rgba(194,65,12,.5);border-radius:5px;padding:9px 10px">
+                <div style="font:500 19px/1 'IBM Plex Mono',monospace;color:#ff9a6b">01</div>
+                <div style="font:400 10.5px/1.4 'IBM Plex Sans Arabic',sans-serif;color:rgba(255,255,255,.65);margin-top:4px">بانتظار قطعة</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:6px;padding:12px 14px 4px;overflow:hidden">
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+              <div onClick="{{ f.go }}" style="{{ f.style }}">{{ f.label }}</div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:9px;padding:10px 14px 96px">
+            <sc-for list="{{ jobs }}" as="job" hint-placeholder-count="5">
+              <div onClick="{{ job.open }}" style="background:#fff;border:1px solid rgba(21,20,15,.12);border-right:3px solid #15140f;border-radius:5px;padding:12px 13px;display:flex;flex-direction:column;gap:9px;cursor:pointer" style-hover="border-color:rgba(194,65,12,.45)">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font:500 12px/1 'IBM Plex Mono',monospace;color:#15140f;background:#efece4;padding:4px 6px;border-radius:3px">{{ job.t }}</span>
+                    <span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8b8578">{{ job.id }}</span>
+                  </div>
+                  <span style="{{ job.stStyle }}">{{ job.st }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <div style="font:600 14.5px/1.4 'IBM Plex Sans Arabic',sans-serif;color:#15140f">{{ job.dev }}</div>
+                  <div style="font:400 12.5px/1.5 'IBM Plex Sans Arabic',sans-serif;color:#6e685d">{{ job.fault }}</div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:8px;border-top:1px dashed rgba(21,20,15,.12)">
+                  <div style="font:400 12px/1.4 'IBM Plex Sans Arabic',sans-serif;color:#6e685d">{{ job.cust }}</div>
+                  <div style="{{ job.prioStyle }}">{{ job.prio }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ T2 · بطاقة العمل ============ -->
+      <sc-if value="{{ isT2 }}">
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#fff;border-bottom:1px solid rgba(21,20,15,.12)">
+            <div onClick="{{ backT1 }}" style="width:32px;height:32px;border:1px solid rgba(21,20,15,.18);border-radius:4px;display:flex;align-items:center;justify-content:center;font:500 15px 'IBM Plex Sans Arabic',sans-serif;color:#15140f;cursor:pointer">›</div>
+            <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+              <div style="font:600 15px/1.3 'IBM Plex Sans Arabic',sans-serif;color:#15140f">بطاقة العمل</div>
+              <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8b8578">WO-4821 · مكيف سبليت ٢ طن</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;background:#fdf1e9;border:1px solid rgba(194,65,12,.3);border-radius:3px;padding:5px 8px">
+              <div style="width:6px;height:6px;border-radius:50%;background:#c2410c;animation:liveDot 1.6s infinite"></div>
+              <span style="font:500 11px/1 'IBM Plex Sans Arabic',sans-serif;color:#b4400f">{{ timerLabel }}</span>
+            </div>
+          </div>
+
+          <div style="padding:14px 14px 110px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:#fff;border:1px solid rgba(21,20,15,.12);border-radius:5px;padding:13px;display:flex;flex-direction:column;gap:11px">
+              <div style="display:flex;justify-content:space-between;gap:10px">
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <div style="font:400 11px/1 'IBM Plex Sans Arabic',sans-serif;color:#8b8578">العميل</div>
+                  <div style="font:600 14px/1.4 'IBM Plex Sans Arabic',sans-serif;color:#15140f">أم عبدالله الدوسري</div>
+                  <div style="font:400 12px/1.5 'IBM Plex Sans Arabic',sans-serif;color:#6e685d">حي النرجس · شارع ٢١ · فيلا ١٤</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <div style="background:#15140f;color:#fff;border-radius:4px;padding:8px 12px;font:500 12px 'IBM Plex Sans Arabic',sans-serif;text-align:center;cursor:pointer">اتصال</div>
+                  <div style="border:1px solid rgba(21,20,15,.2);border-radius:4px;padding:8px 12px;font:500 12px 'IBM Plex Sans Arabic',sans-serif;color:#15140f;text-align:center;cursor:pointer">الخريطة</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;padding-top:11px;border-top:1px solid rgba(21,20,15,.1)">
+                <div style="flex:1"><div style="font:400 11px/1 'IBM Plex Sans Arabic',sans-serif;color:#8b8578;margin-bottom:4px">الموديل</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#15140f">AC-SPL-24K</div></div>
+                <div style="flex:1"><div style="font:400 11px/1 'IBM Plex Sans Arabic',sans-serif;color:#8b8578;margin-bottom:4px">الرقم التسلسلي</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#15140f">8842-KQ-19</div></div>
+                <div style="flex:1"><div style="font:400 11px/1 'IBM Plex Sans Arabic',sans-serif;color:#8b8578;margin-bottom:4px">الضمان</div><div style="font:500 12px/1 'IBM Plex Sans Arabic',sans-serif;color:#15706a">ساري · ٤ أشهر</div></div>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid rgba(21,20,15,.12);border-radius:5px;padding:13px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                <div style="font:600 13.5px/1 'IBM Plex Sans Arabic',sans-serif;color:#15140f">خطوات الفحص الإلزامية</div>
+                <div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#8b8578">{{ checkLabel }}</div>
+              </div>
+              <div style="height:3px;background:#e9e5dc;border-radius:2px;overflow:hidden">
+                <div style="{{ checkBarStyle }}"></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <sc-for list="{{ checks }}" as="c" hint-placeholder-count="5">
+                  <div onClick="{{ c.toggle }}" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(21,20,15,.07);cursor:pointer">
+                    <div style="{{ c.boxStyle }}">{{ c.mark }}</div>
+                    <div style="{{ c.textStyle }}">{{ c.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid rgba(21,20,15,.12);border-radius:5px;padding:13px;display:flex;flex-direction:column;gap:10px">
+              <div style="font:600 13.5px/1 'IBM Plex Sans Arabic',sans-serif;color:#15140f">توثيق العطل</div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;height:76px;border:1px dashed rgba(21,20,15,.28);border-radius:4px;background:repeating-linear-gradient(45deg,#f4f1ea,#f4f1ea 6px,#ece8df 6px,#ece8df 12px);display:flex;align-items:center;justify-content:center;font:500 9.5px 'IBM Plex Mono',monospace;color:#8b8578;text-align:center">صورة قبل<br>الإصلاح</div>
+                <div style="flex:1;height:76px;border:1px dashed rgba(21,20,15,.28);border-radius:4px;background:repeating-linear-gradient(45deg,#f4f1ea,#f4f1ea 6px,#ece8df 6px,#ece8df 12px);display:flex;align-items:center;justify-content:center;font:500 9.5px 'IBM Plex Mono',monospace;color:#8b8578;text-align:center">صورة لوحة<br>البيانات</div>
+                <div style="flex:1;height:76px;border:1px solid rgba(21,20,15,.2);border-radius:4px;background:#f4f1ea;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer"><div style="font:400 20px/1 'IBM Plex Sans Arabic',sans-serif;color:#15140f">+</div><div style="font:500 10px 'IBM Plex Sans Arabic',sans-serif;color:#6e685d">إضافة</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="position:sticky;bottom:0;background:#fff;border-top:1px solid rgba(21,20,15,.14);padding:12px 14px;display:flex;gap:9px">
+            <div onClick="{{ goT3 }}" style="flex:1;background:#c2410c;color:#fff;border-radius:4px;padding:14px;text-align:center;font:600 14px 'IBM Plex Sans Arabic',sans-serif;cursor:pointer">التشخيص والتسعير</div>
+            <div style="border:1px solid rgba(21,20,15,.2);border-radius:4px;padding:14px 16px;font:500 13px 'IBM Plex Sans Arabic',sans-serif;color:#15140f;cursor:pointer">تعليق</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ T3 · التشخيص والتسعير ============ -->
+      <sc-if value="{{ isT3 }}">
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#fff;border-bottom:1px solid rgba(21,20,15,.12)">
+            <div onClick="{{ goT2 }}" style="width:32px;height:32px;border:1px solid rgba(21,20,15,.18);border-radius:4px;display:flex;align-items:center;justify-content:center;font:500 15px 'IBM Plex Sans Arabic',sans-serif;color:#15140f;cursor:pointer">›</div>
+            <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+              <div style="font:600 15px/1.3 'IBM Plex Sans Arabic',sans-serif;color:#15140f">التشخيص والتسعير</div>
+              <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8b8578">WO-4821</div>
+            </div>
+          </div>
+
+          <div style="padding:14px 14px 120px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:#fff;border:1px solid rgba(21,20,15,.12);border-radius:5px;padding:13px;display:flex;flex-direction:column;gap:9px">
+              <div style="font:600 13.5px/1 'IBM Plex Sans Arabic',sans-serif;color:#15140f">سبب العطل</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <sc-for list="{{ causes }}" as="c" hint-placeholder-count="4">
+                  <div onClick="{{ c.go }}" style="{{ c.style }}">{{ c.label }}</div>
+                </sc-for>
+              </div>
+              <div style="border:1px solid rgba(21,20,15,.15);border-radius:4px;background:#f9f7f2;padding:10px 11px;font:400 12.5px/1.7 'IBM Plex Sans Arabic',sans-serif;color:#6e685d">تسريب في وصلة الأنبوب النحاسي أدى لانخفاض ضغط الفريون؛ مضخة التصريف مسدودة بالأتربة.</div>
+            </div>
+
+            <div style="background:#fff;border:1px solid rgba(21,20,15,.12);border-radius:5px;overflow:hidden">
+              <div style="padding:13px;border-bottom:1px solid rgba(21,20,15,.1);font:600 13.5px/1 'IBM Plex Sans Arabic',sans-serif;color:#15140f">بنود العرض</div>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ lines }}" as="l" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid rgba(21,20,15,.07)">
+                    <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                      <div style="font:500 13px/1.4 'IBM Plex Sans Arabic',sans-serif;color:#15140f">{{ l.n }}</div>
+                      <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8b8578">{{ l.meta }}</div>
+                    </div>
+                    <div style="font:500 13px/1 'IBM Plex Mono',monospace;color:#15140f">{{ l.total }}</div>
+                    <div onClick="{{ l.remove }}" style="width:26px;height:26px;border:1px solid rgba(21,20,15,.16);border-radius:3px;display:flex;align-items:center;justify-content:center;font:400 14px 'IBM Plex Sans Arabic',sans-serif;color:#8b8578;cursor:pointer">×</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="padding:11px 13px;display:flex;flex-direction:column;gap:7px;background:#f9f7f2">
+                <div style="font:400 11px/1 'IBM Plex Sans Arabic',sans-serif;color:#8b8578">إضافة بند من المخزون</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ catalog }}" as="p" hint-placeholder-count="4">
+                    <div onClick="{{ p.add }}" style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid rgba(21,20,15,.18);border-radius:4px;padding:7px 9px;cursor:pointer" style-hover="border-color:#c2410c">
+                      <span style="font:500 12px/1 'IBM Plex Sans Arabic',sans-serif;color:#15140f">{{ p.n }}</span>
+                      <span style="font:500 11px/1 'IBM Plex Mono',monospace;color:#c2410c">+{{ p.p }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:#15140f;border-radius:5px;padding:14px;display:flex;flex-direction:column;gap:9px;color:#fff">
+              <div style="display:flex;justify-content:space-between"><span style="font:400 12.5px 'IBM Plex Sans Arabic',sans-serif;color:rgba(255,255,255,.6)">الإجمالي قبل الضريبة</span><span style="font:500 13px 'IBM Plex Mono',monospace">{{ sub }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font:400 12.5px 'IBM Plex Sans Arabic',sans-serif;color:rgba(255,255,255,.6)">ضريبة القيمة المضافة ١٥٪</span><span style="font:500 13px 'IBM Plex Mono',monospace">{{ vat }}</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;border-top:1px solid rgba(255,255,255,.16)"><span style="font:600 13.5px 'IBM Plex Sans Arabic',sans-serif">الإجمالي المستحق</span><span style="font:500 21px 'IBM Plex Mono',monospace;color:#ff9a6b">{{ grand }}</span></div>
+            </div>
+
+            <sc-if value="{{ sent }}">
+              <div style="background:#eaf4f2;border:1px solid rgba(21,112,106,.35);border-radius:5px;padding:12px 13px;display:flex;gap:10px;align-items:flex-start">
+                <div style="width:7px;height:7px;border-radius:50%;background:#15706a;margin-top:6px"></div>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <div style="font:600 13px/1.4 'IBM Plex Sans Arabic',sans-serif;color:#0f5650">أُرسل العرض للعميل عبر رسالة نصية</div>
+                  <div style="font:400 12px/1.6 'IBM Plex Sans Arabic',sans-serif;color:#3d7d77">لا يمكن بدء الإصلاح قبل الموافقة. سيصلك إشعار فوري عند الرد
+</x-dc>
+</body>
+</html>
