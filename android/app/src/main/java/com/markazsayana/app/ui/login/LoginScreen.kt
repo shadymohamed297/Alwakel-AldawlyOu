@@ -83,7 +83,7 @@ fun LoginScreen(
         ) {
             Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "الوكيل الدولي", style = MaterialTheme.typography.titleLarge, color = PetrolGreen)
-                Text(text = "القاهرة", style = MaterialTheme.typography.bodyMedium, color = TextTertiary)
+                Text(text = "نظام إدارة الصيانة", style = MaterialTheme.typography.bodyMedium, color = TextTertiary)
             }
         }
 

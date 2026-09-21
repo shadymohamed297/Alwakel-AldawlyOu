@@ -106,6 +106,51 @@ jobs:
           check "$KHALED" "http://localhost:3000/api/inventory?filter=low"
           check "$KHALED" "http://localhost:3000/api/technicians/roster"
           check "$KHALED" "http://localhost:3000/api/reports?period=month"
+          check "$KHALED" "http://localhost:3000/api/employees"
+
+          echo "checking change-password round-trip"
+          cp_code=$(curl -s -o /tmp/cp.json -w "%{http_code}" -X POST http://localhost:3000/api/auth/change-password \
+            -H "Authorization: Bearer $KHALED" -H 'Content-Type: application/json' \
+            -d '{"currentPassword":"Passw0rd!","newPassword":"TempPassw0rd!"}')
+          if [ "$cp_code" != "200" ]; then echo "FAILED ($cp_code): change-password"; cat /tmp/cp.json; exit 1; fi
+          curl -sf -X POST http://localhost:3000/api/auth/change-password \
+            -H "Authorization: Bearer $KHALED" -H 'Content-Type: application/json' \
+            -d '{"currentPassword":"TempPassw0rd!","newPassword":"Passw0rd!"}' >/dev/null
+
+          echo "checking quote -> approve round-trip on work order 1"
+          quote_code=$(curl -s -o /tmp/quote.json -w "%{http_code}" -X PATCH http://localhost:3000/api/work-orders/1/quote \
+            -H "Authorization: Bearer $MAHMOUD" -H 'Content-Type: application/json' \
+            -d '{"estimatedCost":1200,"note":"CI check"}')
+          if [ "$quote_code" != "200" ] || ! grep -q '"status":"awaiting_approval"' /tmp/quote.json; then
+            echo "FAILED ($quote_code): send quote"; cat /tmp/quote.json; exit 1
+          fi
+          approve_code=$(curl -s -o /tmp/approve.json -w "%{http_code}" -X POST http://localhost:3000/api/work-orders/1/approve -H "Authorization: Bearer $KHALED")
+          if [ "$approve_code" != "200" ] || ! grep -q '"status":"in_progress"' /tmp/approve.json; then
+            echo "FAILED ($approve_code): approve quote"; cat /tmp/approve.json; exit 1
+          fi
+
+          echo "checking reject on a seeded awaiting-approval work order (WO-2411, id 8)"
+          reject_code=$(curl -s -o /tmp/reject.json -w "%{http_code}" -X POST http://localhost:3000/api/work-orders/8/reject \
+            -H "Authorization: Bearer $KHALED" -H 'Content-Type: application/json' -d '{"reason":"CI check"}')
+          if [ "$reject_code" != "200" ] || ! grep -q '"status":"rejected"' /tmp/reject.json; then
+            echo "FAILED ($reject_code): reject quote"; cat /tmp/reject.json; exit 1
+          fi
+
+          echo "checking employee create -> deactivate -> login blocked"
+          create_code=$(curl -s -o /tmp/emp.json -w "%{http_code}" -X POST http://localhost:3000/api/employees \
+            -H "Authorization: Bearer $KHALED" -H 'Content-Type: application/json' \
+            -d '{"name":"CI Test","role":"reception","email":"ci-test@markazsayana.eg"}')
+          if [ "$create_code" != "201" ]; then echo "FAILED ($create_code): create employee"; cat /tmp/emp.json; exit 1; fi
+          EMP_ID=$(node -e "console.log(require('/tmp/emp.json').employee.id)")
+          EMP_PASSWORD=$(node -e "console.log(require('/tmp/emp.json').temporaryPassword)")
+          deactivate_code=$(curl -s -o /tmp/emp2.json -w "%{http_code}" -X PATCH "http://localhost:3000/api/employees/$EMP_ID" \
+            -H "Authorization: Bearer $KHALED" -H 'Content-Type: application/json' -d '{"active":false}')
+          if [ "$deactivate_code" != "200" ]; then echo "FAILED ($deactivate_code): deactivate employee"; cat /tmp/emp2.json; exit 1; fi
+          login_after_code=$(curl -s -o /tmp/emp3.json -w "%{http_code}" -X POST http://localhost:3000/api/auth/login \
+            -H 'Content-Type: application/json' -d "{\"identifier\":\"ci-test@markazsayana.eg\",\"password\":\"$EMP_PASSWORD\"}")
+          if [ "$login_after_code" != "403" ]; then
+            echo "FAILED ($login_after_code): deactivated employee should not be able to log in with correct password"; cat /tmp/emp3.json; exit 1
+          fi
 
           echo "checking CSV export"
           csv_code=$(curl -s -o /tmp/report.csv -w "%{http_code}" -H "Authorization: Bearer $KHALED" "http://localhost:3000/api/reports/export?period=month")

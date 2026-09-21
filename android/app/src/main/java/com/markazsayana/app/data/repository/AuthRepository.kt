@@ -2,6 +2,7 @@ package com.markazsayana.app.data.repository
 
 import com.markazsayana.app.data.local.TokenManager
 import com.markazsayana.app.data.remote.ApiService
+import com.markazsayana.app.data.remote.ChangePasswordRequest
 import com.markazsayana.app.data.remote.LoginRequest
 import com.markazsayana.app.data.remote.UserDto
 import kotlinx.coroutines.flow.Flow
@@ -33,5 +34,9 @@ class AuthRepository @Inject constructor(
     suspend fun logout() {
         tokenManager.clear()
         sessionState.clear()
+    }
+
+    suspend fun changePassword(currentPassword: String, newPassword: String) {
+        api.changePassword(ChangePasswordRequest(currentPassword, newPassword))
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -24,8 +25,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -47,6 +53,7 @@ import com.markazsayana.app.ui.theme.PetrolGreenChipBg
 import com.markazsayana.app.ui.theme.SurfaceScreen
 import com.markazsayana.app.ui.theme.TextPrimary
 import com.markazsayana.app.ui.theme.TextTertiary
+import com.markazsayana.app.ui.theme.UrgentRed
 import com.markazsayana.app.util.dateLabelCairo
 import java.time.Instant
 
@@ -55,12 +62,24 @@ private val nav = navItemsForRole("reception")
 @Composable
 fun WorkOrdersListScreen(
     onNavTab: (String) -> Unit,
+    initialFilter: WorkOrderFilter? = null,
     viewModel: WorkOrdersListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
 
+    LaunchedEffect(initialFilter) {
+        initialFilter?.let { viewModel.setInitialFilter(it) }
+    }
+
     state.selected?.let { wo ->
-        WorkOrderDetailDialog(wo = wo, onDismiss = { viewModel.select(null) })
+        WorkOrderDetailDialog(
+            wo = wo,
+            actionInProgress = state.actionInProgress,
+            actionError = state.actionError,
+            onDismiss = { viewModel.select(null) },
+            onApprove = { viewModel.approve(wo.id) },
+            onReject = { reason -> viewModel.reject(wo.id, reason) },
+        )
     }
 
     Scaffold(
@@ -99,6 +118,13 @@ fun WorkOrdersListScreen(
             when {
                 state.loading -> FullScreenLoading()
                 state.error != null -> FullScreenError(state.error!!, onRetry = viewModel::load)
+                state.items.isEmpty() -> Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = if (state.search.isNotBlank()) "لا توجد نتائج مطابقة للبحث" else "لا توجد طلبات في هذا التصنيف",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextTertiary,
+                    )
+                }
                 else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(state.items, key = { it.id }) { wo ->
                         WorkOrderRow(wo, onClick = { viewModel.select(wo) })
@@ -127,7 +153,16 @@ private fun WorkOrderRow(wo: WorkOrderSummaryDto, onClick: () -> Unit) {
 }
 
 @Composable
-private fun WorkOrderDetailDialog(wo: WorkOrderSummaryDto, onDismiss: () -> Unit) {
+private fun WorkOrderDetailDialog(
+    wo: WorkOrderSummaryDto,
+    actionInProgress: Boolean,
+    actionError: String?,
+    onDismiss: () -> Unit,
+    onApprove: () -> Unit,
+    onReject: (String?) -> Unit,
+) {
+    var showRejectReason by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(wo.code) },
@@ -141,12 +176,57 @@ private fun WorkOrderDetailDialog(wo: WorkOrderSummaryDto, onDismiss: () -> Unit
                 DetailLine("الفني", wo.technicianName ?: "بلا فني")
                 DetailLine("تاريخ الإنشاء", runCatching { Instant.parse(wo.createdAt).dateLabelCairo() }.getOrDefault(wo.createdAt))
                 wo.closedAt?.let { DetailLine("تاريخ الإغلاق", runCatching { Instant.parse(it).dateLabelCairo() }.getOrDefault(it)) }
+
+                if (wo.status == "awaiting_approval") {
+                    Text(
+                        text = "بعد اتصالك بالعميل وتأكيد قراره بخصوص عرض السعر:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextTertiary,
+                        modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
+                    )
+                    if (actionInProgress) {
+                        Box(modifier = Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = PetrolGreen)
+                        }
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            TextButton(onClick = onApprove) { Text("العميل وافق", color = PetrolGreen) }
+                            TextButton(onClick = { showRejectReason = true }) { Text("العميل رفض", color = UrgentRed) }
+                        }
+                    }
+                    actionError?.let {
+                        Text(text = it, color = UrgentRed, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 6.dp))
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("إغلاق", color = PetrolGreen) }
         },
     )
+
+    if (showRejectReason) {
+        var reason by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showRejectReason = false },
+            title = { Text("سبب الرفض (اختياري)") },
+            text = {
+                OutlinedTextField(
+                    value = reason,
+                    onValueChange = { reason = it },
+                    placeholder = { Text("مثال: السعر مرتفع") },
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PetrolGreen),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showRejectReason = false; onReject(reason.ifBlank { null }) }) {
+                    Text("تأكيد الرفض", color = UrgentRed)
+                }
+            },
+            dismissButton = { TextButton(onClick = { showRejectReason = false }) { Text("تراجع", color = TextTertiary) } },
+        )
+    }
 }
 
 @Composable

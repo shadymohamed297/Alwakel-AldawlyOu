@@ -97,4 +97,27 @@ router.get('/:id', requireAuth, requireRole('reception', 'manager'), async (req,
   });
 });
 
+router.patch('/:id', requireAuth, requireRole('reception', 'manager'), async (req, res) => {
+  const { name, phone, address, branch } = req.body || {};
+  const { rows } = await pool.query(
+    `UPDATE customers SET
+       name = COALESCE($1, name),
+       phone = COALESCE($2, phone),
+       address = COALESCE($3, address),
+       branch = COALESCE($4, branch)
+     WHERE id = $5 RETURNING *`,
+    [name || null, phone || null, address, branch, req.params.id]
+  );
+  if (!rows[0]) return res.status(404).json({ error: 'Customer not found' });
+  return res.json({
+    customer: {
+      id: rows[0].id,
+      name: rows[0].name,
+      phone: rows[0].phone,
+      address: rows[0].address,
+      branch: rows[0].branch,
+    },
+  });
+});
+
 module.exports = router;

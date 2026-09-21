@@ -14,6 +14,7 @@ import javax.inject.Inject
 enum class WorkOrderFilter(val label: String, val statusQuery: String?) {
     ALL("الكل", null),
     OPEN("مفتوحة", "new,assigned,in_progress,paused,awaiting_approval"),
+    AWAITING_APPROVAL("بانتظار الموافقة", "awaiting_approval"),
     CLOSED("مغلقة", "closed"),
 }
 
@@ -24,6 +25,8 @@ data class WorkOrdersListUiState(
     val search: String = "",
     val error: String? = null,
     val selected: WorkOrderSummaryDto? = null,
+    val actionInProgress: Boolean = false,
+    val actionError: String? = null,
 )
 
 @HiltViewModel
@@ -62,5 +65,32 @@ class WorkOrdersListViewModel @Inject constructor(
 
     fun runSearch() = load()
 
-    fun select(item: WorkOrderSummaryDto?) = _uiState.update { it.copy(selected = item) }
+    fun select(item: WorkOrderSummaryDto?) = _uiState.update { it.copy(selected = item, actionError = null) }
+
+    fun setInitialFilter(filter: WorkOrderFilter) {
+        if (_uiState.value.filter == filter) return
+        _uiState.update { it.copy(filter = filter) }
+        load()
+    }
+
+    fun approve(id: Int) = runAction {
+        repository.approve(id)
+    }
+
+    fun reject(id: Int, reason: String?) = runAction {
+        repository.reject(id, reason)
+    }
+
+    private fun runAction(action: suspend () -> Unit) {
+        _uiState.update { it.copy(actionInProgress = true, actionError = null) }
+        viewModelScope.launch {
+            try {
+                action()
+                _uiState.update { it.copy(actionInProgress = false, selected = null) }
+                load()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(actionInProgress = false, actionError = "تعذّر تنفيذ العملية، حاول مرة أخرى") }
+            }
+        }
+    }
 }

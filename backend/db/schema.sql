@@ -111,3 +111,20 @@ CREATE TABLE IF NOT EXISTS invoices (
   customer_rating SMALLINT CHECK (customer_rating BETWEEN 1 AND 5),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ── Additive migrations (safe to re-run: schema.sql is applied on every deploy) ─────
+
+-- Employee account management: lets a manager deactivate a departed/lost-phone
+-- employee's access immediately, without deleting their historical records.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT true;
+
+-- Customer-approval quote workflow on a work order.
+ALTER TABLE work_orders ADD COLUMN IF NOT EXISTS estimated_cost NUMERIC(10, 2);
+ALTER TABLE work_orders ADD COLUMN IF NOT EXISTS quote_note TEXT;
+ALTER TABLE work_orders ADD COLUMN IF NOT EXISTS quoted_at TIMESTAMPTZ;
+ALTER TABLE work_orders ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+ALTER TABLE work_orders ADD COLUMN IF NOT EXISTS reject_reason TEXT;
+
+ALTER TABLE work_orders DROP CONSTRAINT IF EXISTS work_orders_status_check;
+ALTER TABLE work_orders ADD CONSTRAINT work_orders_status_check
+  CHECK (status IN ('new', 'assigned', 'in_progress', 'paused', 'awaiting_approval', 'rejected', 'completed', 'closed'));

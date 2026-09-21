@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +32,7 @@ import com.markazsayana.app.data.remote.ManagerKpis
 import com.markazsayana.app.data.remote.WeeklyRevenuePoint
 import com.markazsayana.app.ui.components.BottomNavBar
 import com.markazsayana.app.ui.components.navItemsForRole
+import com.markazsayana.app.ui.components.ChangePasswordIconButton
 import com.markazsayana.app.ui.components.FullScreenError
 import com.markazsayana.app.ui.components.FullScreenLoading
 import com.markazsayana.app.ui.components.LogoutIconButton
@@ -66,6 +68,7 @@ private val faultColors = listOf(PetrolGreen, AccentOrange, PetrolGreenDark, Ora
 @Composable
 fun ManagerDashboardScreen(
     onNavTab: (String) -> Unit,
+    onManageEmployees: () -> Unit,
     viewModel: ManagerDashboardViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -77,13 +80,25 @@ fun ManagerDashboardScreen(
         when (val s = state) {
             is ManagerDashboardUiState.Loading -> FullScreenLoading(Modifier.padding(padding))
             is ManagerDashboardUiState.Error -> FullScreenError(s.message, onRetry = { viewModel.load("month") }, modifier = Modifier.padding(padding))
-            is ManagerDashboardUiState.Success -> DashboardContent(s, onPeriodChange = viewModel::load, onLogout = viewModel::logout, modifier = Modifier.padding(padding))
+            is ManagerDashboardUiState.Success -> DashboardContent(
+                s,
+                onPeriodChange = viewModel::load,
+                onLogout = viewModel::logout,
+                onManageEmployees = onManageEmployees,
+                modifier = Modifier.padding(padding),
+            )
         }
     }
 }
 
 @Composable
-private fun DashboardContent(state: ManagerDashboardUiState.Success, onPeriodChange: (String) -> Unit, onLogout: () -> Unit, modifier: Modifier) {
+private fun DashboardContent(
+    state: ManagerDashboardUiState.Success,
+    onPeriodChange: (String) -> Unit,
+    onLogout: () -> Unit,
+    onManageEmployees: () -> Unit,
+    modifier: Modifier,
+) {
     Column(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxWidth().background(SurfaceDark).padding(horizontal = 16.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
@@ -91,7 +106,20 @@ private fun DashboardContent(state: ManagerDashboardUiState.Success, onPeriodCha
                     Text(text = "لوحة الأداء · ${currentMonthYearLabelCairo()}", style = MaterialTheme.typography.bodySmall, color = TextOnDarkMuted)
                     Text(text = "الوكيل الدولي", style = MaterialTheme.typography.titleLarge, color = CardWhite, modifier = Modifier.padding(top = 3.dp))
                 }
-                LogoutIconButton(onConfirmLogout = onLogout)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(CardWhite.copy(alpha = 0.18f))
+                            .clickable { onManageEmployees() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(text = "👥", style = MaterialTheme.typography.titleMedium)
+                    }
+                    ChangePasswordIconButton()
+                    LogoutIconButton(onConfirmLogout = onLogout)
+                }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
                 periodTabs.forEach { (key, label) ->

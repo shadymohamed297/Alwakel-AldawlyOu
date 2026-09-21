@@ -1,5 +1,8 @@
 package com.markazsayana.app.ui.technician
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,7 +26,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,12 +39,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.markazsayana.app.ui.components.FullScreenError
 import com.markazsayana.app.ui.components.FullScreenLoading
 import com.markazsayana.app.ui.components.OutlinedCard
 import com.markazsayana.app.ui.components.PrimaryButton
+import com.markazsayana.app.ui.components.SecondaryButton
 import com.markazsayana.app.ui.theme.BorderMedium
 import com.markazsayana.app.ui.theme.CardShape
 import com.markazsayana.app.ui.theme.CardWhite
@@ -58,6 +63,9 @@ import com.markazsayana.app.ui.theme.TextTertiary
 import com.markazsayana.app.ui.theme.UrgentRed
 import com.markazsayana.app.util.egp
 
+private fun whatsAppInvoiceMessage(code: String, deviceType: String, total: String): String =
+    "شكراً لتعاملكم مع الوكيل الدولي.\nتم تسليم طلب الصيانة $code ($deviceType).\nإجمالي الفاتورة: $total"
+
 private val paymentMethods = listOf("card" to "شبكة", "cash" to "نقد", "account" to "على الحساب")
 
 @Composable
@@ -67,15 +75,54 @@ fun InvoiceSignoffScreen(
     viewModel: InvoiceSignoffViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(state.closed) {
-        if (state.closed) onClosed()
-    }
+    val context = LocalContext.current
 
     Scaffold(containerColor = SurfaceScreen) { padding ->
         when {
             state.loading -> FullScreenLoading(Modifier.padding(padding))
             state.workOrder == null || state.invoice == null -> FullScreenError(state.error ?: "خطأ", onRetry = viewModel::load, modifier = Modifier.padding(padding))
+            state.closed -> {
+                val wo = state.workOrder!!
+                val invoice = state.invoice!!
+                Column(
+                    modifier = Modifier.padding(padding).fillMaxSize().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Box(
+                        modifier = Modifier.size(64.dp).clip(CircleShape).background(SuccessGreen.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(text = "✓", style = MaterialTheme.typography.headlineMedium, color = SuccessGreen) }
+                    Text(
+                        text = "تم تسليم الطلب بنجاح",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = TextPrimary,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                    Text(
+                        text = "${wo.code} · ${invoice.total.egp()}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextTertiary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 28.dp),
+                    )
+                    PrimaryButton(
+                        text = "إرسال الفاتورة للعميل عبر واتساب",
+                        backgroundColor = SuccessGreen,
+                        onClick = {
+                            val digitsOnly = wo.customer.phone.filter { it.isDigit() }
+                            val message = whatsAppInvoiceMessage(wo.code, wo.device.type, invoice.total.egp())
+                            val uri = Uri.parse("https://wa.me/$digitsOnly?text=${Uri.encode(message)}")
+                            try {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                            } catch (e: ActivityNotFoundException) {
+                                // No browser/WhatsApp available on this device — the technician can share manually instead.
+                            }
+                        },
+                    )
+                    SecondaryButton(text = "إنهاء", onClick = onClosed, modifier = Modifier.padding(top = 10.dp))
+                }
+            }
             else -> {
                 val wo = state.workOrder!!
                 val invoice = state.invoice!!
@@ -160,7 +207,7 @@ fun InvoiceSignoffScreen(
                             ) {
                                 Box(modifier = Modifier.padding(top = 7.dp).size(8.dp).clip(CircleShape).background(PetrolGreen))
                                 Text(
-                                    text = "يُرسل تقرير الصيانة والفاتورة للعميل عبر واتساب بعد التسليم.",
+                                    text = "بعد تأكيد التسليم يمكنك إرسال الفاتورة للعميل عبر واتساب مباشرةً.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = PetrolGreenDark,
                                 )

@@ -11,7 +11,11 @@ import com.markazsayana.app.data.remote.CreateWorkOrderRequest
 import com.markazsayana.app.data.remote.CustomerDto
 import com.markazsayana.app.data.remote.DeviceDto
 import com.markazsayana.app.data.remote.InvoicePreviewResponse
+import com.markazsayana.app.data.remote.RejectQuoteRequest
+import com.markazsayana.app.data.remote.SendQuoteRequest
 import com.markazsayana.app.data.remote.TechnicianDto
+import com.markazsayana.app.data.remote.UpdateDeviceRequest
+import com.markazsayana.app.data.remote.UpdateWorkOrderRequest
 import com.markazsayana.app.data.remote.WorkOrderDto
 import com.markazsayana.app.data.remote.WorkOrderListResponse
 import com.markazsayana.app.data.remote.WorkOrderSummaryDto
@@ -84,4 +88,26 @@ class WorkOrderRepository @Inject constructor(private val api: ApiService) {
         workOrderId,
         CloseWorkOrderRequest(laborFee, warrantyDiscount, paymentMethod, signatureName, customerRating)
     ).workOrder
+
+    suspend fun sendQuote(workOrderId: Int, estimatedCost: Double, note: String?): WorkOrderDto =
+        api.sendQuote(workOrderId, SendQuoteRequest(estimatedCost, note)).workOrder
+
+    suspend fun approve(workOrderId: Int): WorkOrderDto = api.approveWorkOrder(workOrderId).workOrder
+
+    suspend fun reject(workOrderId: Int, reason: String?): WorkOrderDto =
+        api.rejectWorkOrder(workOrderId, RejectQuoteRequest(reason)).workOrder
+
+    suspend fun updateWorkOrder(workOrderId: Int, issueDescription: String?, priority: String?): WorkOrderDto =
+        api.updateWorkOrder(workOrderId, UpdateWorkOrderRequest(issueDescription = issueDescription, priority = priority)).workOrder
+
+    suspend fun updateDevice(
+        deviceId: Int,
+        brand: String?,
+        model: String?,
+        serialNumber: String?,
+        underWarranty: Boolean?,
+    ): DeviceDto = api.updateDevice(
+        deviceId,
+        UpdateDeviceRequest(brand = brand, model = model, serialNumber = serialNumber, underWarranty = underWarranty)
+    ).device
 }

@@ -22,10 +22,15 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +68,11 @@ fun WorkOrderExecutionScreen(
     viewModel: WorkOrderExecutionViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
+    var showQuoteDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.quoteSent) {
+        if (state.quoteSent) onBack()
+    }
 
     Scaffold(containerColor = SurfaceScreen) { padding ->
         when {
@@ -152,6 +162,24 @@ fun WorkOrderExecutionScreen(
                                 Text(text = "إضافة صور قبل / بعد", style = MaterialTheme.typography.labelLarge, color = PetrolGreen, textAlign = TextAlign.Center)
                             }
                         }
+
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(OrangeChipBg, CardShape)
+                                    .clickable { showQuoteDialog = true }
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "العطل يحتاج قطعة خارج الضمان — إرسال عرض سعر لموافقة العميل",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = OrangeTextDark,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
                     }
 
                     Row(
@@ -165,6 +193,67 @@ fun WorkOrderExecutionScreen(
             }
         }
     }
+
+    if (showQuoteDialog) {
+        SendQuoteDialog(
+            submitting = state.submittingQuote,
+            error = state.quoteError,
+            onDismiss = { showQuoteDialog = false },
+            onSend = { cost, note -> viewModel.sendQuote(cost, note) },
+        )
+    }
+}
+
+@Composable
+private fun SendQuoteDialog(
+    submitting: Boolean,
+    error: String?,
+    onDismiss: () -> Unit,
+    onSend: (cost: Double, note: String?) -> Unit,
+) {
+    var cost by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+    val parsedCost = cost.toDoubleOrNull()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("إرسال عرض سعر للعميل") },
+        text = {
+            Column {
+                Text(
+                    text = "سيُنقل الطلب إلى \"بانتظار موافقة العميل\" حتى يتصل الاستقبال بالعميل ويسجّل قراره.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextTertiary,
+                    modifier = Modifier.padding(bottom = 10.dp),
+                )
+                OutlinedTextField(
+                    value = cost,
+                    onValueChange = { cost = it },
+                    label = { Text("التكلفة التقديرية (ج.م)") },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PetrolGreen),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("ملاحظة (اختياري)") },
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PetrolGreen),
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                )
+                error?.let {
+                    Text(text = it, color = UrgentRed, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 6.dp))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = parsedCost != null && parsedCost > 0 && !submitting,
+                onClick = { onSend(parsedCost!!, note.trim().ifBlank { null }) },
+            ) { Text(if (submitting) "جارٍ الإرسال…" else "إرسال", color = PetrolGreen) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("إلغاء", color = TextTertiary) } },
+    )
 }
 
 @Composable

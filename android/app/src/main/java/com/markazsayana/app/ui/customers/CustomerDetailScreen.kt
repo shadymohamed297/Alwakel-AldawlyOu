@@ -14,12 +14,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,13 +59,20 @@ fun CustomerDetailScreen(
         when (val s = state) {
             is CustomerDetailUiState.Loading -> FullScreenLoading(Modifier.padding(padding))
             is CustomerDetailUiState.Error -> FullScreenError(s.message, onRetry = viewModel::load, modifier = Modifier.padding(padding))
-            is CustomerDetailUiState.Success -> Content(s.data, onBack, Modifier.padding(padding))
+            is CustomerDetailUiState.Success -> Content(s.data, onBack, onSave = viewModel::updateCustomer, modifier = Modifier.padding(padding))
         }
     }
 }
 
 @Composable
-private fun Content(data: CustomerDetailResponse, onBack: () -> Unit, modifier: Modifier) {
+private fun Content(
+    data: CustomerDetailResponse,
+    onBack: () -> Unit,
+    onSave: (name: String, phone: String, address: String?) -> Unit,
+    modifier: Modifier,
+) {
+    var showEditDialog by remember { mutableStateOf(false) }
+
     Column(modifier = modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().background(CardWhite).padding(horizontal = 16.dp, vertical = 10.dp),
@@ -69,10 +83,14 @@ private fun Content(data: CustomerDetailResponse, onBack: () -> Unit, modifier: 
                 modifier = Modifier.size(40.dp).clip(CircleShape).background(SurfaceScreen).clickable(onClick = onBack),
                 contentAlignment = Alignment.Center,
             ) { Text(text = "→", style = MaterialTheme.typography.titleMedium, color = TextPrimary) }
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(text = data.customer.name, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
                 Text(text = data.customer.phone, style = MaterialTheme.typography.bodySmall, color = TextTertiary)
             }
+            Box(
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(SurfaceScreen).clickable { showEditDialog = true },
+                contentAlignment = Alignment.Center,
+            ) { Text(text = "✎", style = MaterialTheme.typography.titleMedium, color = PetrolGreen) }
         }
 
         LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -92,6 +110,61 @@ private fun Content(data: CustomerDetailResponse, onBack: () -> Unit, modifier: 
             items(data.workOrders, key = { it.id }) { wo -> WorkOrderHistoryRow(wo) }
         }
     }
+
+    if (showEditDialog) {
+        EditCustomerDialog(
+            name = data.customer.name,
+            phone = data.customer.phone,
+            address = data.customer.address,
+            onDismiss = { showEditDialog = false },
+            onSave = { name, phone, address ->
+                onSave(name, phone, address)
+                showEditDialog = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun EditCustomerDialog(
+    name: String,
+    phone: String,
+    address: String?,
+    onDismiss: () -> Unit,
+    onSave: (name: String, phone: String, address: String?) -> Unit,
+) {
+    var editedName by remember { mutableStateOf(name) }
+    var editedPhone by remember { mutableStateOf(phone) }
+    var editedAddress by remember { mutableStateOf(address ?: "") }
+    val canSave = editedName.isNotBlank() && editedPhone.isNotBlank()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("تعديل بيانات العميل") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = editedName, onValueChange = { editedName = it }, label = { Text("الاسم") }, singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PetrolGreen), modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = editedPhone, onValueChange = { editedPhone = it }, label = { Text("رقم الهاتف") }, singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PetrolGreen), modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                )
+                OutlinedTextField(
+                    value = editedAddress, onValueChange = { editedAddress = it }, label = { Text("العنوان") }, singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PetrolGreen), modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = canSave,
+                onClick = { onSave(editedName.trim(), editedPhone.trim(), editedAddress.trim().ifBlank { null }) },
+            ) { Text("حفظ", color = if (canSave) PetrolGreen else TextTertiary) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("إلغاء", color = TextTertiary) } },
+    )
 }
 
 @Composable

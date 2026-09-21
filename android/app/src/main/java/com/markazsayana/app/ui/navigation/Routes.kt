@@ -16,9 +16,11 @@ object Routes {
     fun invoiceSignoff(workOrderId: Int) = "technician/invoice/$workOrderId"
 
     const val MANAGER_DASHBOARD = "manager/dashboard"
+    const val EMPLOYEES = "manager/employees"
     const val INVENTORY = "inventory"
 
     const val WORK_ORDERS_LIST = "work-orders"
+    const val PENDING_APPROVALS = "work-orders/awaiting-approval"
     const val CUSTOMERS_LIST = "customers"
     const val CUSTOMER_DETAIL = "customers/{customerId}"
     fun customerDetail(customerId: Int) = "customers/$customerId"

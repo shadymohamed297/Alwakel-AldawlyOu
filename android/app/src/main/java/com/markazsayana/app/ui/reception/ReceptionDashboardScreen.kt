@@ -2,6 +2,7 @@ package com.markazsayana.app.ui.reception
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ import com.markazsayana.app.data.remote.AppointmentDto
 import com.markazsayana.app.data.remote.PendingApprovals
 import com.markazsayana.app.data.remote.ReceptionCounts
 import com.markazsayana.app.ui.components.BottomNavBar
+import com.markazsayana.app.ui.components.ChangePasswordIconButton
 import com.markazsayana.app.ui.components.FullScreenError
 import com.markazsayana.app.ui.components.FullScreenLoading
 import com.markazsayana.app.ui.components.LogoutIconButton
@@ -69,6 +71,7 @@ private val receptionNavItems = navItemsForRole("reception")
 fun ReceptionDashboardScreen(
     onNewRequest: () -> Unit,
     onNavTab: (String) -> Unit,
+    onOpenApprovals: () -> Unit,
     viewModel: ReceptionDashboardViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -97,6 +100,7 @@ fun ReceptionDashboardScreen(
                 appointments = s.data.todaysAppointments,
                 onNewRequest = onNewRequest,
                 onLogout = viewModel::logout,
+                onOpenApprovals = onOpenApprovals,
             )
         }
     }
@@ -112,6 +116,7 @@ private fun ReceptionDashboardContent(
     appointments: List<AppointmentDto>,
     onNewRequest: () -> Unit,
     onLogout: () -> Unit,
+    onOpenApprovals: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val todayLabel = remember { Instant.now().atZone(ZoneId.of("Africa/Cairo")).dateLabel() }
@@ -126,7 +131,7 @@ private fun ReceptionDashboardContent(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Column {
                     Text(
-                        text = "فرع القاهرة · $branch · $todayLabel",
+                        text = "فرع $branch · $todayLabel",
                         style = MaterialTheme.typography.bodySmall,
                         color = CardWhite.copy(alpha = 0.8f),
                     )
@@ -138,6 +143,7 @@ private fun ReceptionDashboardContent(
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ChangePasswordIconButton()
                 LogoutIconButton(onConfirmLogout = onLogout)
                 Box(
                     modifier = Modifier
@@ -172,6 +178,7 @@ private fun ReceptionDashboardContent(
                             .fillMaxWidth()
                             .background(OrangeChipBg, RoundedCornerShape(14.dp))
                             .border(1.dp, OrangeChipBorder, RoundedCornerShape(14.dp))
+                            .clickable { onOpenApprovals() }
                             .padding(14.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {

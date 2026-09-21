@@ -3,6 +3,7 @@ package com.markazsayana.app.ui.customers
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -73,6 +74,13 @@ fun CustomersListScreen(
             when {
                 state.loading -> FullScreenLoading()
                 state.error != null -> FullScreenError(state.error!!, onRetry = viewModel::load)
+                state.items.isEmpty() -> Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = if (state.search.isNotBlank()) "لا يوجد عملاء مطابقون للبحث" else "لا يوجد عملاء بعد",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextTertiary,
+                    )
+                }
                 else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(state.items, key = { it.id }) { c -> CustomerRow(c, onClick = { onOpenCustomer(c.id) }) }
                 }

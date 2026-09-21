@@ -20,6 +20,7 @@ import com.markazsayana.app.ui.components.FullScreenLoading
 import com.markazsayana.app.ui.customers.CustomerDetailScreen
 import com.markazsayana.app.ui.customers.CustomersListScreen
 import com.markazsayana.app.ui.login.LoginScreen
+import com.markazsayana.app.ui.manager.EmployeesScreen
 import com.markazsayana.app.ui.manager.InventoryScreen
 import com.markazsayana.app.ui.manager.ManagerDashboardScreen
 import com.markazsayana.app.ui.manager.TechniciansRosterScreen
@@ -31,6 +32,7 @@ import com.markazsayana.app.ui.technician.InvoiceSignoffScreen
 import com.markazsayana.app.ui.technician.MyPerformanceScreen
 import com.markazsayana.app.ui.technician.TechnicianTasksScreen
 import com.markazsayana.app.ui.technician.WorkOrderExecutionScreen
+import com.markazsayana.app.ui.workorders.WorkOrderFilter
 import com.markazsayana.app.ui.workorders.WorkOrdersListScreen
 
 @Composable
@@ -74,6 +76,7 @@ fun MarkazSayanaNavHost(navController: NavHostController) {
             ReceptionDashboardScreen(
                 onNewRequest = { navController.navigate(Routes.NEW_REQUEST) },
                 onNavTab = { route -> navController.navigateTab(route) },
+                onOpenApprovals = { navController.navigate(Routes.PENDING_APPROVALS) },
             )
         }
         composable(Routes.NEW_REQUEST) {
@@ -124,7 +127,14 @@ fun MarkazSayanaNavHost(navController: NavHostController) {
 
         // ── Manager ──────────────────────────────────────────────────
         composable(Routes.MANAGER_DASHBOARD) {
-            ManagerDashboardScreen(onNavTab = { route -> navController.navigateTab(route) })
+            ManagerDashboardScreen(
+                onNavTab = { route -> navController.navigateTab(route) },
+                onManageEmployees = { navController.navigate(Routes.EMPLOYEES) },
+            )
+        }
+
+        composable(Routes.EMPLOYEES) {
+            EmployeesScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.TECHNICIANS_ROSTER) {
@@ -147,6 +157,13 @@ fun MarkazSayanaNavHost(navController: NavHostController) {
         // ── Shared (reception) ──────────────────────────────────────
         composable(Routes.WORK_ORDERS_LIST) {
             WorkOrdersListScreen(onNavTab = { route -> navController.navigateTab(route) })
+        }
+
+        composable(Routes.PENDING_APPROVALS) {
+            WorkOrdersListScreen(
+                onNavTab = { route -> navController.navigateTab(route) },
+                initialFilter = WorkOrderFilter.AWAITING_APPROVAL,
+            )
         }
 
         composable(Routes.CUSTOMERS_LIST) {

@@ -24,6 +24,56 @@ data class LoginResponse(val token: String, val user: UserDto)
 @Serializable
 data class MeResponse(val user: UserDto)
 
+@Serializable
+data class ChangePasswordRequest(val currentPassword: String, val newPassword: String)
+
+// ── Employee management (manager) ───────────────────────────────────
+
+@Serializable
+data class EmployeeDto(
+    val id: Int,
+    val name: String,
+    val initials: String,
+    val email: String? = null,
+    val phone: String? = null,
+    val role: String,
+    val branch: String? = null,
+    val title: String? = null,
+    val specialty: String? = null,
+    val active: Boolean,
+    val createdAt: String,
+)
+
+@Serializable
+data class EmployeesListResponse(val employees: List<EmployeeDto>)
+
+@Serializable
+data class EmployeeResponse(val employee: EmployeeDto, val temporaryPassword: String? = null)
+
+@Serializable
+data class CreateEmployeeRequest(
+    val name: String,
+    val role: String,
+    val email: String? = null,
+    val phone: String? = null,
+    val branch: String? = null,
+    val title: String? = null,
+    val specialty: String? = null,
+)
+
+@Serializable
+data class UpdateEmployeeRequest(
+    val name: String? = null,
+    val role: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val branch: String? = null,
+    val title: String? = null,
+    val specialty: String? = null,
+    val active: Boolean? = null,
+    val resetPassword: Boolean? = null,
+)
+
 // ── Reception dashboard ─────────────────────────────────────────────
 
 @Serializable
@@ -175,6 +225,11 @@ data class WorkOrderDto(
     val startedAt: String? = null,
     val completedAt: String? = null,
     val closedAt: String? = null,
+    val estimatedCost: Double? = null,
+    val quoteNote: String? = null,
+    val quotedAt: String? = null,
+    val approvedAt: String? = null,
+    val rejectReason: String? = null,
     val customer: CustomerRefDto,
     val device: DeviceRefDto,
     val technician: TechnicianRefDto? = null,
@@ -244,6 +299,37 @@ data class InvoicePreviewResponse(
     val subtotal: Double,
     val total: Double,
     val parts: List<PartUsedDto>,
+)
+
+@Serializable
+data class SendQuoteRequest(val estimatedCost: Double, val note: String? = null)
+
+@Serializable
+data class RejectQuoteRequest(val reason: String? = null)
+
+@Serializable
+data class UpdateWorkOrderRequest(
+    val issueDescription: String? = null,
+    val priority: String? = null,
+    val branch: String? = null,
+)
+
+@Serializable
+data class UpdateCustomerRequest(
+    val name: String? = null,
+    val phone: String? = null,
+    val address: String? = null,
+    val branch: String? = null,
+)
+
+@Serializable
+data class UpdateDeviceRequest(
+    val deviceType: String? = null,
+    val brand: String? = null,
+    val model: String? = null,
+    val serialNumber: String? = null,
+    val underWarranty: Boolean? = null,
+    val warrantyEnd: String? = null,
 )
 
 @Serializable

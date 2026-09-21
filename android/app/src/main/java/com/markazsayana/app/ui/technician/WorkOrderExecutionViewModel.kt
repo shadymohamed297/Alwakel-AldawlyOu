@@ -22,6 +22,9 @@ data class WorkOrderExecutionUiState(
     val newPartName: String = "",
     val error: String? = null,
     val readyToFinish: Boolean = false,
+    val submittingQuote: Boolean = false,
+    val quoteError: String? = null,
+    val quoteSent: Boolean = false,
 )
 
 @HiltViewModel
@@ -104,6 +107,18 @@ class WorkOrderExecutionViewModel @Inject constructor(
                 _uiState.update { it.copy(workOrder = updated, addingPart = false, newPartName = "") }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = "تعذّر إضافة القطعة") }
+            }
+        }
+    }
+
+    fun sendQuote(estimatedCost: Double, note: String?) {
+        _uiState.update { it.copy(submittingQuote = true, quoteError = null) }
+        viewModelScope.launch {
+            try {
+                val updated = repository.sendQuote(workOrderId, estimatedCost, note)
+                _uiState.update { it.copy(submittingQuote = false, workOrder = updated, quoteSent = true) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(submittingQuote = false, quoteError = "تعذّر إرسال عرض السعر") }
             }
         }
     }

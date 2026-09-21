@@ -16,11 +16,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,18 +84,22 @@ private fun InventoryContent(
     onOrder: (Int) -> Unit,
     modifier: Modifier,
 ) {
+    var search by remember { mutableStateOf("") }
+    val visibleItems = state.data.items.filter {
+        search.isBlank() || it.name.contains(search, ignoreCase = true) || it.sku.contains(search, ignoreCase = true)
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxWidth().background(CardWhite).padding(16.dp)) {
             Text(text = "المخزون وقطع الغيار", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .background(SurfaceScreen, RoundedCornerShape(10.dp))
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-            ) {
-                Text(text = "بحث باسم القطعة أو الرقم…", style = MaterialTheme.typography.bodyMedium, color = TextTertiary)
-            }
+            OutlinedTextField(
+                value = search,
+                onValueChange = { search = it },
+                placeholder = { Text("بحث باسم القطعة أو الرقم…") },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PetrolGreen),
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            )
         }
 
         LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -102,7 +111,18 @@ private fun InventoryContent(
                 }
             }
 
-            items(state.data.items, key = { it.id }) { item ->
+            if (visibleItems.isEmpty()) {
+                item {
+                    Text(
+                        text = "لا توجد قطع مطابقة",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextTertiary,
+                        modifier = Modifier.padding(vertical = 20.dp),
+                    )
+                }
+            }
+
+            items(visibleItems, key = { it.id }) { item ->
                 InventoryRow(item, canOrder = canOrder, onOrder = { onOrder(item.id) })
             }
 

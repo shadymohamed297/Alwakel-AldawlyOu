@@ -20,6 +20,7 @@ const inventoryRouter = require('./routes/inventory');
 const dashboardRouter = require('./routes/dashboard');
 const customersRouter = require('./routes/customers');
 const reportsRouter = require('./routes/reports');
+const employeesRouter = require('./routes/employees');
 
 const app = express();
 app.use(cors());
@@ -52,6 +53,7 @@ app.use('/api/inventory', inventoryRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/customers', customersRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/employees', employeesRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

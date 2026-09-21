@@ -42,4 +42,15 @@ class CustomerDetailViewModel @Inject constructor(
             }
         }
     }
+
+    fun updateCustomer(name: String, phone: String, address: String?) {
+        viewModelScope.launch {
+            try {
+                repository.update(customerId, name, phone, address)
+                load()
+            } catch (e: Exception) {
+                // The detail screen keeps showing the previous values; the manager can retry from the edit dialog.
+            }
+        }
+    }
 }

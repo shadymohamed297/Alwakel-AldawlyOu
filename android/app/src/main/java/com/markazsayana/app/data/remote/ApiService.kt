@@ -17,6 +17,18 @@ interface ApiService {
     @GET("api/auth/me")
     suspend fun me(): MeResponse
 
+    @POST("api/auth/change-password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): Unit
+
+    @GET("api/employees")
+    suspend fun listEmployees(): EmployeesListResponse
+
+    @POST("api/employees")
+    suspend fun createEmployee(@Body request: CreateEmployeeRequest): EmployeeResponse
+
+    @PATCH("api/employees/{id}")
+    suspend fun updateEmployee(@Path("id") id: Int, @Body request: UpdateEmployeeRequest): EmployeeResponse
+
     @GET("api/dashboard/reception")
     suspend fun receptionDashboard(): ReceptionDashboardResponse
 
@@ -68,6 +80,24 @@ interface ApiService {
 
     @POST("api/work-orders/{id}/close")
     suspend fun closeWorkOrder(@Path("id") id: Int, @Body request: CloseWorkOrderRequest): WorkOrderResponse
+
+    @PATCH("api/work-orders/{id}/quote")
+    suspend fun sendQuote(@Path("id") id: Int, @Body request: SendQuoteRequest): WorkOrderResponse
+
+    @POST("api/work-orders/{id}/approve")
+    suspend fun approveWorkOrder(@Path("id") id: Int): WorkOrderResponse
+
+    @POST("api/work-orders/{id}/reject")
+    suspend fun rejectWorkOrder(@Path("id") id: Int, @Body request: RejectQuoteRequest): WorkOrderResponse
+
+    @PATCH("api/work-orders/{id}")
+    suspend fun updateWorkOrder(@Path("id") id: Int, @Body request: UpdateWorkOrderRequest): WorkOrderResponse
+
+    @PATCH("api/work-orders/devices/{deviceId}")
+    suspend fun updateDevice(@Path("deviceId") deviceId: Int, @Body request: UpdateDeviceRequest): DeviceResponse
+
+    @PATCH("api/customers/{id}")
+    suspend fun updateCustomer(@Path("id") id: Int, @Body request: UpdateCustomerRequest): CustomerResponse
 
     @GET("api/inventory")
     suspend fun inventory(@Query("filter") filter: String = "all"): InventoryResponse

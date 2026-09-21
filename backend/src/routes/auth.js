@@ -45,6 +45,10 @@ router.post('/login', async (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
+  if (!user.active) {
+    return res.status(403).json({ error: 'تم إيقاف هذا الحساب. تواصل مع المدير.' });
+  }
+
   const token = jwt.sign(
     { id: user.id, role: user.role, name: user.name },
     process.env.JWT_SECRET,
@@ -60,6 +64,27 @@ router.get('/me', requireAuth, async (req, res) => {
     return res.status(404).json({ error: 'User not found' });
   }
   return res.json({ user: toPublicUser(rows[0]) });
+});
+
+router.post('/change-password', requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'currentPassword and newPassword are required' });
+  }
+  if (String(newPassword).length < 8) {
+    return res.status(400).json({ error: 'كلمة المرور الجديدة يجب ألا تقل عن ٨ أحرف' });
+  }
+
+  const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+  const user = rows[0];
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const valid = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!valid) return res.status(401).json({ error: 'كلمة المرور الحالية غير صحيحة' });
+
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id]);
+  return res.json({ ok: true });
 });
 
 module.exports = { router, toPublicUser, initials };

@@ -11,6 +11,7 @@ const STATUS_LABELS = {
   in_progress: 'قيد التنفيذ',
   paused: 'متوقفة مؤقتاً',
   awaiting_approval: 'بانتظار موافقة العميل',
+  rejected: 'رفض العميل العرض',
   completed: 'مكتملة',
   closed: 'مغلقة',
 };
@@ -53,6 +54,11 @@ async function loadWorkOrderDetail(id) {
     startedAt: wo.started_at,
     completedAt: wo.completed_at,
     closedAt: wo.closed_at,
+    estimatedCost: wo.estimated_cost !== null ? Number(wo.estimated_cost) : null,
+    quoteNote: wo.quote_note,
+    quotedAt: wo.quoted_at,
+    approvedAt: wo.approved_at,
+    rejectReason: wo.reject_reason,
     customer: {
       id: wo.customer_id,
       name: wo.customer_name,
@@ -149,6 +155,23 @@ router.post('/devices', requireAuth, requireRole('reception', 'manager'), async 
     [customerId, deviceType, brand || null, model || null, serialNumber || null, !!underWarranty, warrantyEnd || null]
   );
   return res.status(201).json({ device: toDeviceDto(rows[0]) });
+});
+
+router.patch('/devices/:deviceId', requireAuth, requireRole('reception', 'manager'), async (req, res) => {
+  const { deviceType, brand, model, serialNumber, underWarranty, warrantyEnd } = req.body || {};
+  const { rows } = await pool.query(
+    `UPDATE devices SET
+       device_type = COALESCE($1, device_type),
+       brand = COALESCE($2, brand),
+       model = COALESCE($3, model),
+       serial_number = COALESCE($4, serial_number),
+       under_warranty = COALESCE($5, under_warranty),
+       warranty_end = COALESCE($6, warranty_end)
+     WHERE id = $7 RETURNING *`,
+    [deviceType || null, brand, model, serialNumber, underWarranty === undefined ? null : !!underWarranty, warrantyEnd, req.params.deviceId]
+  );
+  if (!rows[0]) return res.status(404).json({ error: 'Device not found' });
+  return res.json({ device: toDeviceDto(rows[0]) });
 });
 
 // ── Work orders ─────────────────────────────────────────────────────
@@ -272,6 +295,44 @@ router.get('/:id', requireAuth, async (req, res) => {
   return res.json({ workOrder });
 });
 
+router.patch('/:id', requireAuth, requireRole('reception', 'manager'), async (req, res) => {
+  const { issueDescription, priority, branch } = req.body || {};
+  if (priority && !['normal', 'urgent'].includes(priority)) {
+    return res.status(400).json({ error: 'invalid priority' });
+  }
+  const { rows } = await pool.query(
+    `UPDATE work_orders SET
+       issue_description = COALESCE($1, issue_description),
+       priority = COALESCE($2, priority),
+       branch = COALESCE($3, branch)
+     WHERE id = $4 RETURNING id`,
+    [issueDescription || null, priority || null, branch || null, req.params.id]
+  );
+  if (!rows[0]) return res.status(404).json({ error: 'Work order not found' });
+  return res.json({ workOrder: await loadWorkOrderDetail(req.params.id) });
+});
+
+router.post('/:id/approve', requireAuth, requireRole('reception', 'manager'), async (req, res) => {
+  const { rows } = await pool.query(
+    `UPDATE work_orders SET status = 'in_progress', approved_at = now()
+     WHERE id = $1 AND status = 'awaiting_approval' RETURNING id`,
+    [req.params.id]
+  );
+  if (!rows[0]) return res.status(409).json({ error: 'Work order is not awaiting approval' });
+  return res.json({ workOrder: await loadWorkOrderDetail(req.params.id) });
+});
+
+router.post('/:id/reject', requireAuth, requireRole('reception', 'manager'), async (req, res) => {
+  const { reason } = req.body || {};
+  const { rows } = await pool.query(
+    `UPDATE work_orders SET status = 'rejected', reject_reason = $1, closed_at = now()
+     WHERE id = $2 AND status = 'awaiting_approval' RETURNING id`,
+    [reason || null, req.params.id]
+  );
+  if (!rows[0]) return res.status(409).json({ error: 'Work order is not awaiting approval' });
+  return res.json({ workOrder: await loadWorkOrderDetail(req.params.id) });
+});
+
 router.patch('/:id/assign', requireAuth, requireRole('reception', 'manager'), async (req, res) => {
   const { technicianId, scheduledAt } = req.body || {};
   if (!technicianId || !scheduledAt) return res.status(400).json({ error: 'technicianId and scheduledAt are required' });
@@ -302,6 +363,23 @@ router.post('/:id/start', requireAuth, requireRole('technician'), requireOwnTech
 
 router.post('/:id/pause', requireAuth, requireRole('technician'), requireOwnTechnician, async (req, res) => {
   await pool.query(`UPDATE work_orders SET status = 'paused' WHERE id = $1`, [req.params.id]);
+  return res.json({ workOrder: await loadWorkOrderDetail(req.params.id) });
+});
+
+// A technician who finds the repair needs customer sign-off on cost (e.g. an
+// out-of-warranty part) sends a quote here; the work order leaves the technician's
+// active queue until reception records the customer's phone-call decision via
+// /:id/approve or /:id/reject.
+router.patch('/:id/quote', requireAuth, requireRole('technician'), requireOwnTechnician, async (req, res) => {
+  const { estimatedCost, note } = req.body || {};
+  if (estimatedCost === undefined || Number.isNaN(Number(estimatedCost))) {
+    return res.status(400).json({ error: 'estimatedCost is required' });
+  }
+  await pool.query(
+    `UPDATE work_orders SET status = 'awaiting_approval', estimated_cost = $1, quote_note = $2, quoted_at = now()
+     WHERE id = $3`,
+    [estimatedCost, note || null, req.params.id]
+  );
   return res.json({ workOrder: await loadWorkOrderDetail(req.params.id) });
 });
 

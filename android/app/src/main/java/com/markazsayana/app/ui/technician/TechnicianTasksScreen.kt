@@ -30,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.markazsayana.app.data.remote.WorkOrderDto
 import com.markazsayana.app.ui.components.BottomNavBar
 import com.markazsayana.app.ui.components.navItemsForRole
+import com.markazsayana.app.ui.components.ChangePasswordIconButton
 import com.markazsayana.app.ui.components.FullScreenError
 import com.markazsayana.app.ui.components.FullScreenLoading
 import com.markazsayana.app.ui.components.LogoutIconButton
@@ -92,6 +93,7 @@ private fun TasksContent(state: TechnicianTasksUiState.Success, onOpenWorkOrder:
                     Text(text = "مهام اليوم", style = MaterialTheme.typography.titleLarge, color = CardWhite, modifier = Modifier.padding(top = 3.dp))
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ChangePasswordIconButton()
                     LogoutIconButton(onConfirmLogout = onLogout)
                     Box(
                         modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(CardWhite.copy(alpha = 0.1f)).padding(horizontal = 12.dp, vertical = 8.dp),
