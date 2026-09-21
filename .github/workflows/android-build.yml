@@ -18,16 +18,22 @@ jobs:
       run:
         working-directory: android
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Ensure required Android SDK packages
+        # GitHub-hosted ubuntu runners ship an Android SDK preinstalled (ANDROID_HOME is
+        # already set) — no separate setup-android action needed, one less thing to break.
+        # Installing explicitly (rather than trusting whatever happens to be preinstalled)
+        # keeps this pinned to what the app actually targets.
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0" >/dev/null
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
