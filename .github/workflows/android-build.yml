@@ -45,8 +45,10 @@ jobs:
         if: always()
         run: |
           echo "::notice::pwd=$(pwd)"
-          find app/build/outputs -type f 2>&1 | sed 's/^/::notice::/' || echo "::notice::app/build/outputs not found"
+          find app/build -maxdepth 4 -type d 2>&1 | sed 's/^/::notice::dir: /' || echo "::notice::app/build not found at all"
           find . -maxdepth 6 -iname "*.apk" 2>&1 | sed 's/^/::notice::apk found: /' || true
+          echo "::notice::--- last 15 lines of gradle output, regardless of reported outcome ---"
+          tail -n 15 /tmp/assemble.log | sed 's/^/::notice::/'
 
       - name: Surface assemble failure as annotations
         # Actions log downloads redirect to blob storage that isn't reachable from every
