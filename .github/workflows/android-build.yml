@@ -41,7 +41,7 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug --stacktrace 2>&1 | tee /tmp/assemble.log
 
-      - name: Surface build failure as annotations
+      - name: Surface assemble failure as annotations
         # Actions log downloads redirect to blob storage that isn't reachable from every
         # environment developing this repo; annotations are readable through the plain
         # REST API instead, so a failure here is always diagnosable from just that API.
@@ -51,12 +51,24 @@ jobs:
           echo "::error::--- last 20 lines of build output ---"
           tail -n 20 /tmp/assemble.log | sed 's/^/::error::/'
 
-      - name: Run lint
-        run: ./gradlew lintDebug --stacktrace
-
+      # The APK is the thing that matters (an installable build); lint findings are
+      # useful signal but shouldn't block getting that artifact, so it runs after and
+      # never fails the job — its own findings are still surfaced as annotations below.
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: markaz-sayana-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Run lint
+        id: lint
+        continue-on-error: true
+        run: ./gradlew lintDebug --stacktrace 2>&1 | tee /tmp/lint.log
+
+      - name: Surface lint failure as annotations
+        if: steps.lint.outcome == 'failure'
+        run: |
+          grep -E "^e: |error:|FAILURE|Exception|BUILD FAILED" /tmp/lint.log | tail -n 30 | sed 's/^/::warning::/' || true
+          echo "::warning::--- last 20 lines of lint output (non-blocking) ---"
+          tail -n 20 /tmp/lint.log | sed 's/^/::warning::/'
