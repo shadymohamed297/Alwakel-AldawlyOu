@@ -39,7 +39,17 @@ jobs:
         run: chmod +x gradlew
 
       - name: Assemble debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace 2>&1 | tee /tmp/assemble.log
+
+      - name: Surface build failure as annotations
+        # Actions log downloads redirect to blob storage that isn't reachable from every
+        # environment developing this repo; annotations are readable through the plain
+        # REST API instead, so a failure here is always diagnosable from just that API.
+        if: failure()
+        run: |
+          grep -E "^e: |error:|FAILURE|Exception|BUILD FAILED|Unresolved reference|cannot find symbol" /tmp/assemble.log | tail -n 30 | sed 's/^/::error::/' || true
+          echo "::error::--- last 20 lines of build output ---"
+          tail -n 20 /tmp/assemble.log | sed 's/^/::error::/'
 
       - name: Run lint
         run: ./gradlew lintDebug --stacktrace
