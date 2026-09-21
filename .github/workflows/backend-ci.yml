@@ -1,0 +1,116 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch: {}
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app_user
+          POSTGRES_PASSWORD: app_pass
+          POSTGRES_DB: maintenance_center
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://app_user:app_pass@localhost:5432/maintenance_center
+      JWT_SECRET: ci-test-secret
+      PORT: 3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply schema
+        run: npm run migrate
+
+      - name: Seed demo data
+        run: npm run seed
+
+      - name: Start API
+        run: npm start &
+
+      - name: Wait for API to be ready
+        run: |
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:3000/health >/dev/null; then
+              echo "API is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "API did not become ready in time" >&2
+          exit 1
+
+      - name: Smoke test key endpoints
+        run: |
+          set -e
+
+          login() {
+            curl -sf -X POST http://localhost:3000/api/auth/login \
+              -H 'Content-Type: application/json' \
+              -d "{\"identifier\":\"$1\",\"password\":\"Passw0rd!\"}" \
+              | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).token))"
+          }
+
+          MONA=$(login mona@markazsayana.eg)
+          MAHMOUD=$(login mahmoud@markazsayana.eg)
+          KHALED=$(login khaled@markazsayana.eg)
+
+          check() {
+            echo "checking $2"
+            code=$(curl -s -o /tmp/resp.json -w "%{http_code}" -H "Authorization: Bearer $1" "$2")
+            if [ "$code" != "200" ]; then
+              echo "FAILED ($code): $2"
+              cat /tmp/resp.json
+              exit 1
+            fi
+          }
+
+          check "$MONA" "http://localhost:3000/api/dashboard/reception"
+          check "$MAHMOUD" "http://localhost:3000/api/work-orders/mine"
+          check "$MAHMOUD" "http://localhost:3000/api/work-orders/1"
+          check "$MAHMOUD" "http://localhost:3000/api/technicians/me/performance"
+          check "$MONA" "http://localhost:3000/api/work-orders?status=new,assigned"
+          check "$MONA" "http://localhost:3000/api/customers?limit=5"
+          check "$MONA" "http://localhost:3000/api/customers/1"
+          check "$KHALED" "http://localhost:3000/api/dashboard/manager"
+          check "$KHALED" "http://localhost:3000/api/inventory?filter=low"
+          check "$KHALED" "http://localhost:3000/api/technicians/roster"
+          check "$KHALED" "http://localhost:3000/api/reports?period=month"
+
+          echo "checking CSV export"
+          csv_code=$(curl -s -o /tmp/report.csv -w "%{http_code}" -H "Authorization: Bearer $KHALED" "http://localhost:3000/api/reports/export?period=month")
+          if [ "$csv_code" != "200" ] || ! grep -q "code,customer_name" /tmp/report.csv; then
+            echo "FAILED ($csv_code): CSV export"; cat /tmp/report.csv; exit 1
+          fi
+
+          echo "All smoke checks passed."

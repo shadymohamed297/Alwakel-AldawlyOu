@@ -23,3 +23,34 @@ The design medium is **HTML/CSS/JS** — these are prototypes, not production co
 - `README.md` — this file
 - `chats/` — conversation transcripts (read these!)
 - `project/` — the `نظام مركز الصيانة المتكامل` project files (HTML prototypes, assets, components)
+
+## Implementation
+
+The 8 screens from `project/مركز الصيانة.dc.html`, plus 5 more the design's own bottom nav
+referenced but never designed (الطلبات، العملاء، الفنيون، التقارير، أدائي — built to match the
+same brand rather than left as dead ends), are implemented as a real full-stack app, ready for
+a maintenance center to actually run day to day — not published to Google Play, just installed
+directly on staff phones:
+
+- `backend/` — Node.js + Express + PostgreSQL REST API (auth, work orders, customers,
+  technicians, inventory, dashboards, reports/CSV export). See `backend/README.md` for setup
+  and the full API reference, and its "Production notes" section for the crash-safety and
+  startup-guard fixes made during development.
+- `android/` — Native Android app (Kotlin + Jetpack Compose + Material 3 + Hilt + Retrofit),
+  Arabic RTL only, using the real IBM Plex Sans Arabic font and the brand colors/tokens
+  extracted from the design file. The backend URL is configurable on-device (no rebuild needed
+  after deploying). See `android/README.md` for setup and what's still a known gap.
+- `DEPLOY.md` — free hosting walkthrough (Neon + Render, no credit card, no server to manage) so
+  the backend runs somewhere real phones can reach, not just `localhost`.
+- `.github/workflows/` — CI for both halves: `backend-ci.yml` spins up a real Postgres and
+  smoke-tests every endpoint; `android-build.yml` builds (and lints) the debug APK and attaches
+  it as a downloadable artifact — this exists because the sandbox this was built in has no
+  Android SDK and no network access to Google's Maven/download servers (confirmed org policy,
+  not transient), so a real `./gradlew` build could never be run there.
+
+Every backend endpoint was verified end-to-end with curl during development, including
+deliberately killing Postgres mid-request to confirm the server survives instead of crashing.
+The Android code was cross-checked symbol-by-symbol (every import, DTO field, repository call,
+and nav argument diffed against its definition) since a real Gradle build wasn't possible in
+that sandbox — see `android/README.md` for exactly what that did and didn't catch, and why a
+real build in Android Studio or CI is still the thing that actually proves it compiles.

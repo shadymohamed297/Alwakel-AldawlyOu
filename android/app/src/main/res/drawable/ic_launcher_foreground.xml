@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simple wrench glyph on the petrol-green brand background -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M70,30 C64,24 55,23 48,28 L58,38 L54,48 L44,52 L34,42 C29,49 30,58 36,64 C42,70 51,71 58,66 L78,86 L88,76 L68,56 C73,49 74,40 70,30 Z" />
+</vector>
