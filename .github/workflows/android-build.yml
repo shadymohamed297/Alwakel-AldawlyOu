@@ -41,6 +41,13 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug --stacktrace 2>&1 | tee /tmp/assemble.log
 
+      - name: List build outputs (diagnostic)
+        if: always()
+        run: |
+          echo "::notice::pwd=$(pwd)"
+          find app/build/outputs -type f 2>&1 | sed 's/^/::notice::/' || echo "::notice::app/build/outputs not found"
+          find . -maxdepth 6 -iname "*.apk" 2>&1 | sed 's/^/::notice::apk found: /' || true
+
       - name: Surface assemble failure as annotations
         # Actions log downloads redirect to blob storage that isn't reachable from every
         # environment developing this repo; annotations are readable through the plain
