@@ -14,7 +14,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.navArgument
+import androidx.navigation.navArgument
 import com.markazsayana.app.ui.components.ComingSoonScreen
 import com.markazsayana.app.ui.components.FullScreenLoading
 import com.markazsayana.app.ui.customers.CustomerDetailScreen
