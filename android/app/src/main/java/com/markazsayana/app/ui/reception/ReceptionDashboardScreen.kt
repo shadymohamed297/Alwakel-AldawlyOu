@@ -36,6 +36,7 @@ import com.markazsayana.app.data.remote.ReceptionCounts
 import com.markazsayana.app.ui.components.BottomNavBar
 import com.markazsayana.app.ui.components.FullScreenError
 import com.markazsayana.app.ui.components.FullScreenLoading
+import com.markazsayana.app.ui.components.LogoutIconButton
 import com.markazsayana.app.ui.components.OutlinedCard
 import com.markazsayana.app.ui.components.PrimaryButton
 import com.markazsayana.app.ui.components.navItemsForRole
@@ -95,6 +96,7 @@ fun ReceptionDashboardScreen(
                 pendingApprovals = s.data.pendingApprovals,
                 appointments = s.data.todaysAppointments,
                 onNewRequest = onNewRequest,
+                onLogout = viewModel::logout,
             )
         }
     }
@@ -109,6 +111,7 @@ private fun ReceptionDashboardContent(
     pendingApprovals: PendingApprovals,
     appointments: List<AppointmentDto>,
     onNewRequest: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val todayLabel = remember { Instant.now().atZone(ZoneId.of("Africa/Cairo")).dateLabel() }
@@ -134,6 +137,8 @@ private fun ReceptionDashboardContent(
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LogoutIconButton(onConfirmLogout = onLogout)
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -142,6 +147,7 @@ private fun ReceptionDashboardContent(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(text = initials, color = CardWhite, style = MaterialTheme.typography.labelLarge)
+                }
                 }
             }
         }

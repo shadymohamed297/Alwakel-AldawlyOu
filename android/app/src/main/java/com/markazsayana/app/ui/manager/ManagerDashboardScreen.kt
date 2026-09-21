@@ -33,6 +33,7 @@ import com.markazsayana.app.ui.components.BottomNavBar
 import com.markazsayana.app.ui.components.navItemsForRole
 import com.markazsayana.app.ui.components.FullScreenError
 import com.markazsayana.app.ui.components.FullScreenLoading
+import com.markazsayana.app.ui.components.LogoutIconButton
 import com.markazsayana.app.ui.components.OutlinedCard
 import com.markazsayana.app.ui.navigation.Routes
 import com.markazsayana.app.ui.theme.AccentOrange
@@ -76,17 +77,22 @@ fun ManagerDashboardScreen(
         when (val s = state) {
             is ManagerDashboardUiState.Loading -> FullScreenLoading(Modifier.padding(padding))
             is ManagerDashboardUiState.Error -> FullScreenError(s.message, onRetry = { viewModel.load("month") }, modifier = Modifier.padding(padding))
-            is ManagerDashboardUiState.Success -> DashboardContent(s, onPeriodChange = viewModel::load, modifier = Modifier.padding(padding))
+            is ManagerDashboardUiState.Success -> DashboardContent(s, onPeriodChange = viewModel::load, onLogout = viewModel::logout, modifier = Modifier.padding(padding))
         }
     }
 }
 
 @Composable
-private fun DashboardContent(state: ManagerDashboardUiState.Success, onPeriodChange: (String) -> Unit, modifier: Modifier) {
+private fun DashboardContent(state: ManagerDashboardUiState.Success, onPeriodChange: (String) -> Unit, onLogout: () -> Unit, modifier: Modifier) {
     Column(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxWidth().background(SurfaceDark).padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Text(text = "لوحة الأداء · ${currentMonthYearLabelCairo()}", style = MaterialTheme.typography.bodySmall, color = TextOnDarkMuted)
-            Text(text = "مركز صيانة القاهرة", style = MaterialTheme.typography.titleLarge, color = CardWhite, modifier = Modifier.padding(top = 3.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    Text(text = "لوحة الأداء · ${currentMonthYearLabelCairo()}", style = MaterialTheme.typography.bodySmall, color = TextOnDarkMuted)
+                    Text(text = "الوكيل الدولي", style = MaterialTheme.typography.titleLarge, color = CardWhite, modifier = Modifier.padding(top = 3.dp))
+                }
+                LogoutIconButton(onConfirmLogout = onLogout)
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
                 periodTabs.forEach { (key, label) ->
                     val selected = key == state.period

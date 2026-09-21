@@ -3,6 +3,7 @@ package com.markazsayana.app.ui.manager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.markazsayana.app.data.remote.ManagerDashboardResponse
+import com.markazsayana.app.data.repository.AuthRepository
 import com.markazsayana.app.data.repository.DashboardRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ sealed interface ManagerDashboardUiState {
 @HiltViewModel
 class ManagerDashboardViewModel @Inject constructor(
     private val repository: DashboardRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ManagerDashboardUiState>(ManagerDashboardUiState.Loading)
@@ -38,5 +40,9 @@ class ManagerDashboardViewModel @Inject constructor(
                 _uiState.value = ManagerDashboardUiState.Error("تعذّر تحميل لوحة الأداء")
             }
         }
+    }
+
+    fun logout() {
+        viewModelScope.launch { authRepository.logout() }
     }
 }

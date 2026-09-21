@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.markazsayana.app.data.remote.ReceptionDashboardResponse
 import com.markazsayana.app.data.remote.UserDto
+import com.markazsayana.app.data.repository.AuthRepository
 import com.markazsayana.app.data.repository.DashboardRepository
 import com.markazsayana.app.data.repository.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,6 +25,7 @@ sealed interface ReceptionDashboardUiState {
 class ReceptionDashboardViewModel @Inject constructor(
     private val dashboardRepository: DashboardRepository,
     private val sessionState: SessionState,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ReceptionDashboardUiState>(ReceptionDashboardUiState.Loading)
@@ -43,5 +45,9 @@ class ReceptionDashboardViewModel @Inject constructor(
                 _uiState.value = ReceptionDashboardUiState.Error("تعذّر تحميل لوحة الاستقبال")
             }
         }
+    }
+
+    fun logout() {
+        viewModelScope.launch { authRepository.logout() }
     }
 }

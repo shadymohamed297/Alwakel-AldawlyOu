@@ -32,6 +32,7 @@ import com.markazsayana.app.ui.components.BottomNavBar
 import com.markazsayana.app.ui.components.navItemsForRole
 import com.markazsayana.app.ui.components.FullScreenError
 import com.markazsayana.app.ui.components.FullScreenLoading
+import com.markazsayana.app.ui.components.LogoutIconButton
 import com.markazsayana.app.ui.components.OutlinedCard
 import com.markazsayana.app.ui.components.PrimaryButton
 import com.markazsayana.app.ui.components.SecondaryButton
@@ -72,13 +73,13 @@ fun TechnicianTasksScreen(
         when (val s = state) {
             is TechnicianTasksUiState.Loading -> FullScreenLoading(Modifier.padding(padding))
             is TechnicianTasksUiState.Error -> FullScreenError(s.message, onRetry = viewModel::load, modifier = Modifier.padding(padding))
-            is TechnicianTasksUiState.Success -> TasksContent(s, onOpenWorkOrder, Modifier.padding(padding))
+            is TechnicianTasksUiState.Success -> TasksContent(s, onOpenWorkOrder, viewModel::logout, Modifier.padding(padding))
         }
     }
 }
 
 @Composable
-private fun TasksContent(state: TechnicianTasksUiState.Success, onOpenWorkOrder: (Int) -> Unit, modifier: Modifier) {
+private fun TasksContent(state: TechnicianTasksUiState.Success, onOpenWorkOrder: (Int) -> Unit, onLogout: () -> Unit, modifier: Modifier) {
     val current = state.items.firstOrNull { it.status == "in_progress" || it.status == "paused" }
     val upcoming = state.items.filter { it.status == "assigned" }
     val completed = state.items.filter { it.status == "closed" }
@@ -90,12 +91,15 @@ private fun TasksContent(state: TechnicianTasksUiState.Success, onOpenWorkOrder:
                     Text(text = "${state.user?.name ?: ""} · فني أجهزة منزلية", style = MaterialTheme.typography.bodySmall, color = TextOnDarkMuted)
                     Text(text = "مهام اليوم", style = MaterialTheme.typography.titleLarge, color = CardWhite, modifier = Modifier.padding(top = 3.dp))
                 }
-                Box(
-                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(CardWhite.copy(alpha = 0.1f)).padding(horizontal = 12.dp, vertical = 8.dp),
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "${state.progress.completed.arabic()} / ${state.progress.total.arabic()}", style = MaterialTheme.typography.titleMedium, color = CardWhite)
-                        Text(text = "مكتملة", style = MaterialTheme.typography.labelSmall, color = TextOnDarkMuted)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LogoutIconButton(onConfirmLogout = onLogout)
+                    Box(
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(CardWhite.copy(alpha = 0.1f)).padding(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(text = "${state.progress.completed.arabic()} / ${state.progress.total.arabic()}", style = MaterialTheme.typography.titleMedium, color = CardWhite)
+                            Text(text = "مكتملة", style = MaterialTheme.typography.labelSmall, color = TextOnDarkMuted)
+                        }
                     }
                 }
             }

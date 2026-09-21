@@ -82,7 +82,7 @@ fun LoginScreen(
                 .fillMaxWidth(),
         ) {
             Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = "مركز الصيانة", style = MaterialTheme.typography.titleLarge, color = PetrolGreen)
+                Text(text = "الوكيل الدولي", style = MaterialTheme.typography.titleLarge, color = PetrolGreen)
                 Text(text = "القاهرة", style = MaterialTheme.typography.bodyMedium, color = TextTertiary)
             }
         }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.markazsayana.app.data.remote.TechnicianProgress
 import com.markazsayana.app.data.remote.UserDto
 import com.markazsayana.app.data.remote.WorkOrderDto
+import com.markazsayana.app.data.repository.AuthRepository
 import com.markazsayana.app.data.repository.SessionState
 import com.markazsayana.app.data.repository.WorkOrderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +24,7 @@ sealed interface TechnicianTasksUiState {
 class TechnicianTasksViewModel @Inject constructor(
     private val repository: WorkOrderRepository,
     private val sessionState: SessionState,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<TechnicianTasksUiState>(TechnicianTasksUiState.Loading)
@@ -42,5 +44,9 @@ class TechnicianTasksViewModel @Inject constructor(
                 _uiState.value = TechnicianTasksUiState.Error("تعذّر تحميل مهام اليوم")
             }
         }
+    }
+
+    fun logout() {
+        viewModelScope.launch { authRepository.logout() }
     }
 }
