@@ -27,6 +27,24 @@ app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
+// One-time bootstrap route for hosts (like Render's free tier) that don't offer a
+// shell to run `npm run seed` manually. Guarded by a random token set only as a Render
+// env var (never committed) and compared with a timing-safe check since this action
+// wipes and reseeds all data — remove the SEED_TOKEN env var (or redeploy without this
+// route) once you've used it.
+if (process.env.SEED_TOKEN) {
+  app.get('/api/admin/seed', async (req, res) => {
+    const provided = Buffer.from(String(req.query.token || ''));
+    const expected = Buffer.from(process.env.SEED_TOKEN);
+    const ok = provided.length === expected.length && require('crypto').timingSafeEqual(provided, expected);
+    if (!ok) return res.status(403).json({ error: 'Forbidden' });
+
+    const { seed } = require('../db/seed');
+    await seed();
+    return res.json({ ok: true, message: 'Seed complete. Remove SEED_TOKEN from your env vars now.' });
+  });
+}
+
 app.use('/api/auth', authRouter);
 app.use('/api/work-orders', workOrdersRouter);
 app.use('/api/technicians', techniciansRouter);

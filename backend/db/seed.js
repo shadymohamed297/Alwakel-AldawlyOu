@@ -235,11 +235,19 @@ async function seed() {
     throw err;
   } finally {
     client.release();
-    await pool.end();
   }
 }
 
-seed().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+module.exports = { seed, DEFAULT_PASSWORD };
+
+// Only auto-run (and close the shared pool afterward) when invoked directly as a CLI
+// script (`npm run seed`) — not when required as a module by the running server, which
+// needs to keep the pool open for its own requests.
+if (require.main === module) {
+  seed()
+    .then(() => pool.end())
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}
