@@ -39,7 +39,13 @@ jobs:
         run: chmod +x gradlew
 
       - name: Assemble debug APK
-        run: ./gradlew assembleDebug --stacktrace 2>&1 | tee /tmp/assemble.log
+        # `| tee` on its own hides gradlew's real exit code behind tee's (always 0) —
+        # explicitly propagate the first pipeline command's status via PIPESTATUS so a
+        # real build failure doesn't get reported as a passing step.
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee /tmp/assemble.log
+          exit ${PIPESTATUS[0]}
 
       - name: List build outputs (diagnostic)
         if: always()
@@ -73,7 +79,10 @@ jobs:
       - name: Run lint
         id: lint
         continue-on-error: true
-        run: ./gradlew lintDebug --stacktrace 2>&1 | tee /tmp/lint.log
+        run: |
+          set -o pipefail
+          ./gradlew lintDebug --stacktrace 2>&1 | tee /tmp/lint.log
+          exit ${PIPESTATUS[0]}
 
       - name: Surface lint failure as annotations
         if: steps.lint.outcome == 'failure'
