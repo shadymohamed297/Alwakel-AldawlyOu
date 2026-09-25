@@ -21,12 +21,13 @@ android {
 
     buildTypes {
         debug {
-            // Android emulator loopback to the host machine's backend (adb reverse or 10.0.2.2)
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000/\"")
+            // The real deployed backend, so a fresh install works without any manual setup.
+            // Staff can still repoint it from the login screen's "عنوان السيرفر" link if needed.
+            buildConfigField("String", "BASE_URL", "\"https://alwakel-aldawlyou.onrender.com/\"")
         }
         release {
             isMinifyEnabled = false
-            buildConfigField("String", "BASE_URL", "\"https://api.markazsayana.eg/\"")
+            buildConfigField("String", "BASE_URL", "\"https://alwakel-aldawlyou.onrender.com/\"")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
